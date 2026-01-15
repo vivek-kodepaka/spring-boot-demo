@@ -11,10 +11,16 @@
 ## Spring Boot Solution ✅
 
 * Spring Boot = Spring + Opinionated Defaults + Auto Configuration
-  * @SpringBootApplication
-    * @SpringBootConfiguration
-    * @EnableAutoConfiguration
-    * @ComponentScan
+* Spring Boot is NOT a replacement for Spring
+  - It is Spring framework + features to reduce configuration + easy production-ready setup.
+
+* @SpringBootApplication
+  * **@SpringBootConfiguration**
+  * **@EnableAutoConfiguration**
+    * It enables Spring Boot to load configurations from:
+      * spring.factories (older)
+      * AutoConfiguration.imports (newer approach)
+  * **@ComponentScan**
 
 ## 2️⃣ What EXACTLY is Spring Boot?
 
@@ -154,6 +160,8 @@ Includes:
 java -jar app.jar
 ✔ Tomcat (default)
 ✔ Jetty / Undertow (optional)
+- By default for web:
+- Tomcat embedded comes from spring-boot-starter-web
 
 ## Entry Point – @SpringBootApplication
 
@@ -174,7 +182,7 @@ SpringApplication.run(MyApp.class, args);
 ### Profiles (VERY COMMON)
 - spring.profiles.active=dev
 
-Files:
+Files: application.properties < application-{profile}.properties
 - application-dev.properties
 - application-prod.properties
 
@@ -186,3 +194,75 @@ Use case:
 8️⃣ Dependency Injection – Same as Spring
 Nothing new here ✔
 Your Spring knowledge applies 100%
+
+
+## application.properties / application.yml (Core Spring Boot Config)
+
+- Spring Boot reads config mainly from **application.properties**
+  - server.port=9090
+  - server.servlet.context-path=/api
+  - logging.level.root=INFO
+    logging.level.org.springframework=INFO
+    logging.level.com.vivek=DEBUG
+  - debug=true    (It prints which AutoConfigurations matched / not matched.)
+  - app.name=spring-boot-demo    (custom propertiesx)
+    app.owner=vivek
+
+## Profiles (dev/test/prod)
+
+- Profiles mean: different configs for different environments.
+  - ✅ application.properties (common)
+    ✅ application-dev.properties
+    ✅ application-prod.properties
+  - application-dev.properties overrides application.properties
+
+
+## Spring Boot REST API Basics (Most Important)
+
+- Spring Boot REST API = Expose HTTP endpoints like:
+  - GET → fetch data
+  - POST → create data
+  - PUT → update
+  - DELETE → delete
+
+- **@RestController** = @Controller + @ResponseBody
+  - it returns JSON/Text directly, not a JSP/HTML page.
+
+- **@PathVariable**
+  - When URL contains dynamic value.
+  - GET http://localhost:8080/users/10
+  - ` @GetMapping("/users/{id}")
+     public String getUser(@PathVariable int id) {
+     return "User id = " + id;
+     }`
+
+- **@RequestParam**
+  - When value comes as query param.
+  - GET /search?name=vivek&city=hyd
+  -  `@GetMapping("/search")
+     public String search(@RequestParam String name,
+     @RequestParam String city) {
+     return "Searching name=" + name + ", city=" + city;
+     }`
+
+- **@RequestBody**
+  - When client sends JSON body.
+  - `@PostMapping
+    public Employee createEmployee(@RequestBody Employee emp) {
+    return emp; // echo back
+    }`
+
+- **ResponseEntity**
+  - return _body + HTTP_ status code
+  -  `@GetMapping("/ok")
+     public ResponseEntity<String> ok() {
+     return ResponseEntity.ok("Success");
+     }
+
+     @GetMapping("/created")
+     public ResponseEntity<String> created() {
+     return ResponseEntity.status(201).body("Created");
+     }`
+    
+
+
