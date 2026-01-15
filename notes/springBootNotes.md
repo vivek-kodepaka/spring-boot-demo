@@ -11,6 +11,10 @@
 ## Spring Boot Solution ✅
 
 * Spring Boot = Spring + Opinionated Defaults + Auto Configuration
+  * @SpringBootApplication
+    * @SpringBootConfiguration
+    * @EnableAutoConfiguration
+    * @ComponentScan
 
 ## 2️⃣ What EXACTLY is Spring Boot?
 
