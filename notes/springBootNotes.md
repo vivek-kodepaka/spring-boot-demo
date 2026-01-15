@@ -263,6 +263,94 @@ Your Spring knowledge applies 100%
      public ResponseEntity<String> created() {
      return ResponseEntity.status(201).body("Created");
      }`
+
+
+- sterotype annotation
+  - All stereotype annotations are special types of @Component, meaning:
+    - Spring will detect them in component scan
+    - Spring will create a Bean and manage it
+  1. @Component
+      - No specific layer (utility/helper/config classes)
+      - Just marks class as a Spring bean
+  2. @Service
+      - uses - Business logic / rules / calculations
+      - Mainly for readability + layer separation
+      - No extra feature by default
+  3. @Repository
+      - DB related logic (DAO / repository classes)
+      - Exception Translation
+        - Spring converts DB exceptions into Spring exceptions
+  4. @Controller (Web MVC Controller)
+      - Making MVC apps (HTML pages)
+      - Returns View (HTML/JSP/Thymeleaf) usually
+  5. @RestController ✅ (REST API Controller)
+      - Creating REST APIs returning JSON/XML
+      - @RestController = @Controller + @ResponseBody
+
+
+
+## Spring Boot Bean Lifecycle + @PostConstruct + @PreDestroy
+
+* bean life cycle
+  1. Bean Created (Object created)
+  2. Dependencies Injected (DI happens)
+  3. Initialization callback runs (@PostConstruct)
+  4. Bean Ready to use
+  5. App shutdown
+  6. Destroy callback runs (@PreDestroy)
+
+* @PostConstruct - Runs AFTER bean creation
+  * used for
+    * loading config
+    * connecting to something
+    * initialization logic
+    * This runs only once when app starts.
+
+* @PreDestroy ✅ (Runs BEFORE bean destruction)
+  * Used for
+    * closing resources
+    * cleanup
+    * shutdown logic
+
+_@PostConstruct won’t work if:_
     
+  * class is NOT a Spring bean (@Component missing)
+  * package not scanned
+  * method is static
+  * method has parameters (must be no-args)
+  * app is not started properly
 
 
+✅ Why Singleton is default?
+* Because:
+* ✅ memory efficient
+* ✅ fast startup
+* ✅ shared services like DB connection pool, services etc.
+
+# Spring Boot Configuration
+
+  1. application.properties
+  2. @Value
+      * @Value("${app.env:DEV}") - default value
+  3. @ConfigurationProperties
+      * When you have multiple related properties, don’t use many @Value.
+      * `app.info.name=SpringBootEx
+        app.info.version=1.0
+        app.info.owner=Vivek`
+      * `@Component
+        @ConfigurationProperties(prefix = "app.info")
+        public class AppInfoProps {
+        private String name;
+        private String version;
+        private String owner;}`
+
+
+## Spring Boot Profiles
+ * Activate profile
+   * application.properties -> spring.profiles.active=dev
+   * command line        -> mvn spring-boot:run -Dspring-boot.run.profiles=dev
+     
+* Order of config loading
+  * If profile is active, Spring loads:
+  * ✅ application.properties
+  * ✅ then overrides with application-dev.properties (or prod)

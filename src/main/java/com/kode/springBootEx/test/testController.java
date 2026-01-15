@@ -1,5 +1,6 @@
 package com.kode.springBootEx.test;
 
+import com.kode.springBootEx.scope.AppInfo;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
@@ -10,8 +11,14 @@ public class testController {
     @Value("${app.name}")
     private String appName;
 
+    private AppInfo appInfo;
+
+    public testController(AppInfo appInfo) {
+        this.appInfo = appInfo;
+    }
+
     @GetMapping("/test/{id}")
-    public String get(@PathVariable int id){
+    public String get(@PathVariable(required = false) int id){
         return appName + " id is "+ id;
     }
 
@@ -23,5 +30,10 @@ public class testController {
     @PostMapping("/test3")
     public ResponseEntity<Employee> get3( @RequestBody Employee emp){
         return ResponseEntity.ok(emp);
+    }
+
+    @GetMapping("/info")
+    public ResponseEntity<AppInfo> get4(){
+        return ResponseEntity.ok(appInfo);
     }
 }
