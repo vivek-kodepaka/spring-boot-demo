@@ -354,3 +354,182 @@ _@PostConstruct won’t work if:_
   * If profile is active, Spring loads:
   * ✅ application.properties
   * ✅ then overrides with application-dev.properties (or prod)
+
+
+# Global Exception Handling in Spring Boot
+
+- Instead of returning ugly errors / stack traces, we return clean JSON error responses.
+
+1. without cutomException
+    - `@GetMapping("/fail")
+      public String fail() {
+      throw new RuntimeException("Something went wrong");
+      }`
+    - ![img.png](images/img.png)
+2. only custom status code
+   - `@ResponseStatus(HttpStatus.BAD_REQUEST)
+     public class CustomException extends RuntimeException { ... }`
+   - Then Spring will return 400, but message will be generic unless global handler is used.
+   - @ResponseStatus ✅ good for quick fixed status
+2. with custom Exception with in controller
+    - `public class CustomException extends RuntimeException{
+      public CustomException(String msg){
+      super(msg);
+      }
+      }`
+    - `@GetMapping("/customExp")
+      public String getExp1(){
+      throw new CustomException("exception occured");
+      }`
+    -  `@ExceptionHandler(CustomException.class)
+       public ResponseEntity<Map<String,Object>> handleCustonExp(CustomException exp){
+       Map<String,Object> map = new LinkedHashMap<>();
+       map.put("timestamp", LocalDateTime.now());
+       map.put("status", 400);
+       map.put("message", exp.getMessage());
+       return ResponseEntity.status(400).body(map);
+       }`
+    - ![img.png](images/img2.png)
+3. with custom Exception with in Global handler
+    - `@RestControllerAdvice
+      public class GlobalExceptionHandler {
+      @ExceptionHandler(CustomException.class)
+      public ResponseEntity<Map<String,Object>> handleCustonExp(CustomException exp){
+      Map<String,Object> map = new LinkedHashMap<>();
+      map.put("timestamp", LocalDateTime.now());
+      map.put("status", 400);
+      map.put("message", exp.getMessage());
+      return ResponseEntity.status(400).body(map);
+      }
+      }`
+
+
+* Why use @RestControllerAdvice not @ControllerAdvice?
+ - ✅ @RestControllerAdvice automatically returns JSON
+(@ControllerAdvice is more used for HTML MVC apps)
+
+
+# Spring Boot Validation (@Valid)
+
+- `<dependency>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-validation</artifactId>
+</dependency>`
+-` public class Student {
+  @NotBlank(message = "name should not be blank")
+  @Size(min = 3,max = 10,message = "should be between 3 to 10 char")
+  private String name;
+  @Min(value = 15, message = "min 15 age")
+  @Max(value = 30, message = "max is 30")
+  private int age;
+  @Email(message = "valid email pls")
+  private String email;
+  @NotBlank(message = "Phone number is required")
+  @Pattern(
+  regexp = "^[6-9]\\d{9}$",
+  message = "Phone number must be 10 digits and start with 6-9"
+  )
+  private String phoneNum;}`
+-  `@PostMapping("/validate")
+   public ResponseEntity<Student> validate(@Valid  @RequestBody Student student){
+   return ResponseEntity.ok(student);
+   }`
+- `@ExceptionHandler(MethodArgumentNotValidException.class)
+  public ResponseEntity<Map<String,String>> handler(MethodArgumentNotValidException exp){
+        Map<String,String> map = new LinkedHashMap<>();
+        exp.getBindingResult().getFieldErrors().forEach(error -> {
+            map.put(error.getField(),error.getDefaultMessage());
+        });
+        return ResponseEntity.badRequest().body(map);
+  }`
+- Most Used Validation Annotations
+✅ @NotNull
+✅ @NotBlank
+✅ @Size(min,max)
+✅ @Min / @Max
+✅ @Email
+✅ @Pattern
+✅ @Positive / @PositiveOrZero
+- you should use @valid in rest controller otherwise validations wont apply even you add in Student (pojo) class
+
+## @Validated(Spring) vs @Valid (Jakarta (JSR))
+- @Validated
+  - Everything @Valid can do
+  ➕ Extra features like:
+  - ✅ A) Validation Groups (Main Difference 🔥)
+  - You can apply different validations for different operations:
+  - Create Employee ✅
+  - Update Employee ✅
+  - `public interface CreateGroup {}
+    public interface UpdateGroup {}`
+  - `import jakarta.validation.constraints.*;
+     public class EmployeeRequest {
+     @NotNull(groups = UpdateGroup.class, message = "id is required for update")
+    private Integer id;
+    @NotBlank(groups = {CreateGroup.class, UpdateGroup.class}, message = "name is required")
+    private String name;
+    // getters/setters
+    }`
+  - `@PostMapping("/emp")
+    public String create(@Validated(CreateGroup.class) @RequestBody EmployeeRequest req) {
+    return "created";
+    }`
+  - `@PutMapping("/emp")
+    public String update(@Validated(UpdateGroup.class) @RequestBody EmployeeRequest req) {
+    return "updated";
+    }`
+
+
+# Spring Boot Logging (SLF4J + Logback)
+Spring Boot uses:
+
+✅ SLF4J (logging API)
+✅ Logback (default logging implementation)
+
+- spring-boot-starter-web dependency
+-  private static final Logger log = LoggerFactory.getLogger(LogController.class);
+- levels
+   Order (low → high):
+   ✅ TRACE
+   ✅ DEBUG
+   ✅ INFO
+   ✅ WARN
+   ✅ ERROR
+- Default level in Spring Boot:
+  ✅ INFO
+    That means:
+    TRACE ❌ not shown
+    DEBUG ❌ not shown
+    INFO ✅ shown
+    WARN ✅ shown
+    ERROR ✅ shown
+- Enable log level
+  - logging.level.root=DEBUG   (for entire spring application)
+  - logging.level.com.kode=DEBUG (only for package)
+
+- pattern
+  - logging.pattern.console=%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n
+- save log
+  - logging.file.name=app.log
+- best practise
+  - log.info("Employee id is {}", id);  --> use
+  - log.info("Employee id is " + id);  --> dont use
+  - Because concatenation happens even if log level is disabled.
+
+
+# Spring Boot Actuator (Monitoring + Health Checks)
+- Actuator is used in real projects to check:
+  ✅ application health
+  ✅ metrics
+  ✅ environment info
+  ✅ readiness/liveness probes (K8s)
+- `<dependency>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-actuator</artifactId>
+   </dependency>`
+- http://localhost:9090/actuator
+- management.endpoints.web.exposure.include=health,info,metrics
+- management.endpoint.health.show-details=always ( full health like disk space)
+
+
+
